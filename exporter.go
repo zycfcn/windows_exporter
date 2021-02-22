@@ -259,7 +259,7 @@ func main() {
 		log.Fatal(err)
 	}
 	stopCh := make(chan bool)
-	if !isService {
+	if isService {
 		go func() {
 			err = svc.Run(serviceName, &windowsExporterService{stopCh: stopCh})
 			if err != nil {
