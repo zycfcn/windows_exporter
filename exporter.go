@@ -254,6 +254,20 @@ func initWbem() {
 }
 
 func main() {
+	isService, err := svc.IsWindowsService()
+	if err != nil {
+		log.Fatal(err)
+	}
+	stopCh := make(chan bool)
+	if !isService {
+		go func() {
+			err = svc.Run(serviceName, &windowsExporterService{stopCh: stopCh})
+			if err != nil {
+				log.Errorf("Failed to start service: %v", err)
+			}
+		}()
+	}
+
 	var (
 		configFile = kingpin.Flag(
 			"config.file",
@@ -325,21 +339,6 @@ func main() {
 	}
 
 	initWbem()
-
-	isInteractive, err := svc.IsAnInteractiveSession()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stopCh := make(chan bool)
-	if !isInteractive {
-		go func() {
-			err = svc.Run(serviceName, &windowsExporterService{stopCh: stopCh})
-			if err != nil {
-				log.Errorf("Failed to start service: %v", err)
-			}
-		}()
-	}
 
 	collectors, err := loadCollectors(*enabledCollectors)
 	if err != nil {
