@@ -390,5 +390,30 @@ func (c *processCollector) Collect(ctx *ScrapeContext, ch chan<- prometheus.Metr
 		)
 	}
 
+	// add online status
+	for _, processwhite := range strings.Split(*processWhitelist, "|") {
+		online := false
+		processWhitePattern_ := regexp.MustCompile(fmt.Sprintf("^(?:%s)$", processwhite))
+		for _, process := range data {
+			if process.Name == "_Total" ||
+				c.processBlacklistPattern.MatchString(process.Name) {
+				//!c.processWhitelistPattern.MatchString(process.Name)
+				continue
+			}
+			if processWhitePattern_.MatchString(process.Name){
+				online = true
+			}
+		}
+		if !online {
+			ch <- prometheus.MustNewConstMetric(
+				c.StartTime,
+				prometheus.GaugeValue,
+				0,
+				processwhite,
+				"0",
+				"0",
+			)
+		}
+	}
 	return nil
 }
